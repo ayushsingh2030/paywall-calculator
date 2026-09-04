@@ -10,44 +10,104 @@
   <div class="calculator">
     <div class="display">
       <span id="display-value">0</span>
-      <span id="overlay-value">0</span>
+      <span id="overlay-value"></span>
     </div>
     <div class="keys">
-      <button class="key clear">AC</button>
-      <button class="key operator">%</button>
-      <button class="key operator">±</button>
-      <button class="key operator">÷</button>
-      <button class="key">1</button>
-      <button class="key">2</button>
-      <button class="key">3</button>
-      <button class="key operator">×</button>
-      <button class="key">4</button>
-      <button class="key">5</button>
-      <button class="key">6</button>
-      <button class="key operator">−</button>
-      <button class="key">7</button>
-      <button class="key">8</button>
-      <button class="key">9</button>
-      <button class="key operator">+</button>
-      <button class="key">.</button>
-      <button class="key">0</button>
-      <button class="key wide">→</button>
-      <button class="key giant">=</button>
+      <button class="key clear" data-action="clear">AC</button>
+      <button class="key operator" data-value="%">%</button>
+      <button class="key operator" data-action="negate">±</button>
+      <button class="key operator" data-value="÷">÷</button>
+      <button class="key" data-value="1">1</button>
+      <button class="key" data-value="2">2</button>
+      <button class="key" data-value="3">3</button>
+      <button class="key operator" data-value="×">×</button>
+      <button class="key" data-value="4">4</button>
+      <button class="key" data-value="5">5</button>
+      <button class="key" data-value="6">6</button>
+      <button class="key operator" data-value="−">−</button>
+      <button class="key" data-value="7">7</button>
+      <button class="key" data-value="8">8</button>
+      <button class="key" data-value="9">9</button>
+      <button class="key operator" data-value="+">+</button>
+      <button class="key" data-value=".">.</button>
+      <button class="key" data-value="0">0</button>
+      <button class="key wide" data-action="backspace">⌫</button>
+      <button class="key giant" data-action="equals">=</button>
     </div>
     <div id="paywall" class="paywall" role="dialog" aria-modal="true">
-      <div class="paywall-header">
-        <span class="paywall-title">VIP Lifetime Pass</span>
-        <button class="paywall-close" aria-label="Close">&times;</button>
+      <div class="paywall-card">
+        <div class="paywall-header">
+          <span class="paywall-title">VIP Lifetime Pass</span>
+          <button class="paywall-close" id="paywall-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="paywall-banner">
+          <span class="banner-text">VIP Lifetime Pass</span>
+          <span class="banner-price">₹499/mo</span>
+        </div>
+        <div class="paywall-timer" id="paywall-timer">00:30</div>
+        <button class="paywall-subscribe" id="paywall-subscribe">SUBSCRIBE TO UNLOCK ANSWER</button>
+        <div class="paywall-footer">
+          <span class="maybe-later" id="maybe-later">Maybe Later</span>
+        </div>
       </div>
-      <div class="paywall-banner">
-        <span class="banner-text">VIP Lifetime Pass</span>
-        <span class="banner-price">₹499/mo</span>
-      </div>
-      <div class="paywall-timer" id="paywall-timer">00:30</div>
-      <button class="paywall-subscribe" id="paywall-subscribe">SUBSCRIBE TO UNLOCK ANSWER</button>
-      <div class="paywall-footer">
-        <span class="maybe-later" id="maybe-later">Maybe Later</span>
-        <span class="paywall-spinner" id="paywall-spinner" style="display:none;"></span>
+    </div>
+    <div id="payment-gateway" class="paywall" role="dialog" aria-modal="true">
+      <div class="payment-card">
+        <div class="payment-header">
+          <img src="https://img.icons.icons8.com/color/48/verified-stamp.png" alt="Secure" class="secure-icon">
+          <span class="payment-title">Secure Checkout</span>
+          <button class="paywall-close" id="gateway-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="payment-amount">
+          <span class="amount-label">Total Amount</span>
+          <span class="amount-value">₹499.00/mo</span>
+        </div>
+        <div class="payment-methods">
+          <div class="payment-method active" data-method="upi">
+            <div class="method-icon upi-icon">UPI</div>
+            <span>UPI</span>
+          </div>
+          <div class="payment-method" data-method="card">
+            <div class="method-icon card-icon">💳</div>
+            <span>Card</span>
+          </div>
+          <div class="payment-method" data-method="wallets">
+            <div class="method-icon wallet-icon">📱</div>
+            <span>Wallets</span>
+          </div>
+        </div>
+        <div id="upi-section" class="payment-section">
+          <div class="upi-apps">
+            <button class="upi-app" data-app="gpay"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/512px-Google_Pay_Logo.svg.png" alt="Google Pay"></button>
+            <button class="upi-app" data-app="phonepe"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/PhonePe_Logo.svg/512px-PhonePe_Logo.svg.png" alt="PhonePe"></button>
+            <button class="upi-app" data-app="paytm"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Paytm_Logo_%28standalone%29.svg/512px-Paytm_Logo_%28standalone%29.svg.png" alt="Paytm"></button>
+          </div>
+          <div class="upi-id-section">
+            <span class="upi-label">Or pay with UPI ID</span>
+            <div class="upi-input-wrapper">
+              <input type="text" id="upi-id" placeholder="yourname@upi" class="upi-input">
+              <button class="upi-pay-btn" id="upi-pay">Pay ₹499</button>
+            </div>
+          </div>
+        </div>
+        <div id="card-section" class="payment-section" style="display:none;">
+          <div class="card-inputs">
+            <input type="text" id="card-number" placeholder="Card Number" class="card-input" maxlength="19">
+            <div class="card-row">
+              <input type="text" id="card-expiry" placeholder="MM/YY" class="card-input" maxlength="5">
+              <input type="text" id="card-cvv" placeholder="CVV" class="card-input" maxlength="3">
+            </div>
+            <input type="text" id="card-name" placeholder="Cardholder Name" class="card-input">
+          </div>
+          <button class="card-pay-btn" id="card-pay">Pay ₹499</button>
+        </div>
+        <div id="wallets-section" class="payment-section" style="display:none;">
+          <div class="wallet-list">
+            <button class="wallet-option" data-wallet="amazon">Amazon Pay</button>
+            <button class="wallet-option" data-wallet="mobikwik">MobiKwik</button>
+            <button class="wallet-option" data-wallet="freecharge">FreeCharge</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
