@@ -11,6 +11,134 @@ const paywallReason = document.getElementById('paywall-reason');
 const gatewayAmount = document.getElementById('gateway-amount');
 const keys = document.querySelectorAll('.key');
 
+let audioCtx = null;
+let soundEnabled = false;
+
+function getAudioContext() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      audioCtx = null;
+    }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function unlockAudio() {
+  if (soundEnabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const buffer = ctx.createBuffer(1, 1, 22050);
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ctx.destination);
+  source.start(0);
+  soundEnabled = true;
+}
+
+function playTone(freq, duration, type = 'sine', volume = 0.3, startTime = 0) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime + startTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + duration);
+}
+
+function playNoise(duration, volume = 0.15) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const bufferSize = ctx.sampleRate * duration;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1200;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  noise.start();
+  noise.stop(ctx.currentTime + duration);
+}
+
+function sfxPaywallTrigger() {
+  unlockAudio();
+  playTone(880, 0.08, 'square', 0.18, 0);
+  playTone(1320, 0.08, 'square', 0.18, 0.08);
+  playTone(1760, 0.12, 'square', 0.18, 0.16);
+  playTone(2200, 0.15, 'sawtooth', 0.12, 0.24);
+}
+
+function sfxCashRegister() {
+  unlockAudio();
+  playTone(1800, 0.04, 'square', 0.2, 0);
+  playTone(2400, 0.04, 'square', 0.2, 0.05);
+  playTone(1800, 0.04, 'square', 0.2, 0.10);
+  playTone(2400, 0.04, 'square', 0.2, 0.15);
+  playTone(800, 0.08, 'triangle', 0.18, 0.20);
+  playTone(1200, 0.15, 'triangle', 0.15, 0.28);
+}
+
+function sfxSadTrombone() {
+  unlockAudio();
+  const notes = [
+    { f: 392, d: 0.18 },
+    { f: 392, d: 0.18 },
+    { f: 466, d: 0.18 },
+    { f: 349, d: 0.55 }
+  ];
+  let t = 0;
+  notes.forEach(n => {
+    playTone(n.f, n.d, 'sawtooth', 0.22, t);
+    t += n.d * 0.92;
+  });
+}
+
+function sfxFailure() {
+  unlockAudio();
+  sfxSadTrombone();
+  playNoise(0.4, 0.08);
+  playTone(180, 0.5, 'square', 0.18, 0.3);
+}
+
+function sfxKeyClick() {
+  unlockAudio();
+  playTone(600 + Math.random() * 200, 0.04, 'square', 0.08);
+}
+
+function sfxClose() {
+  unlockAudio();
+  playTone(600, 0.06, 'sine', 0.15);
+  playTone(400, 0.08, 'sine', 0.12, 0.06);
+}
+
+function sfxMaybeLater() {
+  unlockAudio();
+  playTone(880, 0.06, 'sine', 0.15);
+  playTone(660, 0.06, 'sine', 0.15, 0.07);
+  playTone(440, 0.1, 'sine', 0.12, 0.14);
+}
+
 let currentValue = '0';
 let previousValue = null;
 let operator = null;
@@ -192,11 +320,14 @@ function showPaywall() {
   const tier = getOperationTier(lastOperator);
   updatePaywallTier(lastOperator);
   paywall.classList.add('show');
+  sfxPaywallTrigger();
   startCountdown();
 }
 
 function hidePaywall() {
+  if (!paywall.classList.contains('show')) return;
   paywall.classList.remove('show');
+  sfxClose();
   stopCountdown();
 }
 
@@ -204,11 +335,15 @@ function showPaymentGateway(tier) {
   const amount = tier === 'advanced' ? '$24.99/mo' : '$9.99/mo';
   gatewayAmount.textContent = amount;
   hidePaywall();
-  paymentGateway.classList.add('show');
+  setTimeout(() => {
+    paymentGateway.classList.add('show');
+    sfxCashRegister();
+  }, 180);
 }
 
 function hidePaymentGateway() {
   paymentGateway.classList.remove('show');
+  sfxClose();
   showPaywall();
 }
 
@@ -233,6 +368,7 @@ function showPaymentFailure() {
   }
   
   failureOverlay.classList.add('show');
+  sfxFailure();
 }
 
 function startCountdown() {
@@ -264,6 +400,7 @@ function updateTimer() {
 // Key event listeners
 keys.forEach(key => {
   key.addEventListener('click', () => {
+    sfxKeyClick();
     const action = key.dataset.action;
     const value = key.dataset.value;
 
@@ -295,6 +432,7 @@ paywallClose.addEventListener('click', (e) => {
 
 maybeLater.addEventListener('click', (e) => {
   e.stopPropagation();
+  sfxMaybeLater();
   hidePaywall();
 });
 
