@@ -5,8 +5,10 @@ const paymentGateway = document.getElementById('payment-gateway');
 const paywallClose = document.getElementById('paywall-close');
 const gatewayClose = document.getElementById('gateway-close');
 const maybeLater = document.getElementById('maybe-later');
-const paywallSubscribe = document.getElementById('paywall-subscribe');
 const paywallTimer = document.getElementById('paywall-timer');
+const paywallExpr = document.getElementById('paywall-expr');
+const paywallReason = document.getElementById('paywall-reason');
+const gatewayAmount = document.getElementById('gateway-amount');
 const keys = document.querySelectorAll('.key');
 
 let currentValue = '0';
@@ -16,6 +18,11 @@ let waitingForSecondOperand = false;
 let lastResult = null;
 let countdownId = null;
 let countdownRemaining = 30;
+let lastOperator = null;
+let expression = '';
+
+const BASIC_OPS = ['+', '−'];
+const ADVANCED_OPS = ['×', '÷', '%'];
 
 function inputDigit(digit) {
   if (waitingForSecondOperand) {
@@ -24,6 +31,7 @@ function inputDigit(digit) {
   } else {
     currentValue = currentValue === '0' ? digit : currentValue + digit;
   }
+  updateExpression();
   updateDisplay();
 }
 
@@ -31,11 +39,13 @@ function inputDecimal() {
   if (waitingForSecondOperand) {
     currentValue = '0.';
     waitingForSecondOperand = false;
+    updateExpression();
     updateDisplay();
     return;
   }
   if (!currentValue.includes('.')) {
     currentValue = currentValue + '.';
+    updateExpression();
     updateDisplay();
   }
 }
@@ -53,6 +63,8 @@ function handleOperator(nextOperator) {
 
   operator = nextOperator;
   waitingForSecondOperand = true;
+  lastOperator = nextOperator;
+  updateExpression();
   updateDisplay();
 }
 
@@ -72,17 +84,63 @@ function performEquals() {
 
   let result;
   const inputValue = parseFloat(currentValue);
-
   result = calculate(parseFloat(previousValue), inputValue, operator);
-  
   lastResult = result;
   currentValue = String(result);
   operator = null;
   previousValue = null;
   waitingForSecondOperand = false;
+  lastOperator = null;
   
+  updateExpression();
   updateDisplay();
   showPaywall();
+}
+
+function updateExpression() {
+  let expr = '';
+  if (previousValue !== null) {
+    expr = formatNumber(previousValue);
+    if (lastOperator) {
+      expr += ' ' + lastOperator + ' ';
+      if (waitingForSecondOperand) {
+        expr += currentValue;
+      } else {
+        expr += formatNumber(parseFloat(currentValue));
+      }
+    }
+  } else {
+    expr = currentValue;
+  }
+  expression = expr;
+  if (paywallExpr) paywallExpr.textContent = expr;
+}
+
+function getOperationTier(op) {
+  if (ADVANCED_OPS.includes(op)) return 'advanced';
+  if (BASIC_OPS.includes(op)) return 'basic';
+  return 'basic';
+}
+
+function updatePaywallTier(op) {
+  const tiers = document.querySelectorAll('.tier');
+  const reasonEl = document.getElementById('paywall-reason');
+  tiers.forEach(tier => {
+    tier.classList.remove('recommended');
+    tier.querySelector('.tier-select').textContent = 'SELECT ' + tier.dataset.tier.toUpperCase();
+  });
+
+  if (ADVANCED_OPS.includes(op)) {
+    const advancedTier = document.querySelector('.tier[data-tier="advanced"]');
+    advancedTier.classList.add('recommended');
+    advancedTier.querySelector('.tier-select').textContent = 'SELECT ADVANCED';
+    reasonEl.textContent = 'Multiplication requires the Advanced STEM Pass. Upgrade to unlock all STEM features.';
+  } else {
+    const basicTier = document.querySelector('.tier[data-tier="basic"]');
+    basicTier.classList.add('recommended');
+    basicTier.querySelector('.tier-select').textContent = 'SELECT BASIC';
+    reasonEl.textContent = 'Basic arithmetic requires a Basic Mathematics subscription.';
+  }
 }
 
 function updateDisplay() {
@@ -108,12 +166,15 @@ function clearAll() {
   previousValue = null;
   operator = null;
   waitingForSecondOperand = false;
+  lastOperator = null;
+  expression = '';
   updateDisplay();
   overlay.textContent = '';
 }
 
 function toggleSign() {
   currentValue = String(-parseFloat(currentValue));
+  updateExpression();
   updateDisplay();
 }
 
@@ -123,10 +184,13 @@ function handleBackspace() {
   } else {
     currentValue = '0';
   }
+  updateExpression();
   updateDisplay();
 }
 
 function showPaywall() {
+  const tier = getOperationTier(lastOperator);
+  updatePaywallTier(lastOperator);
   paywall.classList.add('show');
   startCountdown();
 }
@@ -136,7 +200,9 @@ function hidePaywall() {
   stopCountdown();
 }
 
-function showPaymentGateway() {
+function showPaymentGateway(tier) {
+  const amount = tier === 'advanced' ? '$24.99/mo' : '$9.99/mo';
+  gatewayAmount.textContent = amount;
   hidePaywall();
   paymentGateway.classList.add('show');
 }
@@ -232,9 +298,13 @@ maybeLater.addEventListener('click', (e) => {
   hidePaywall();
 });
 
-paywallSubscribe.addEventListener('click', (e) => {
-  e.stopPropagation();
-  showPaymentGateway();
+// Tier selection
+document.querySelectorAll('.tier-select').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const tier = btn.dataset.tier;
+    showPaymentGateway(tier);
+  });
 });
 
 gatewayClose.addEventListener('click', (e) => {

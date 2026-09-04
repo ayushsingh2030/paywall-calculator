@@ -37,15 +37,43 @@
     <div id="paywall" class="paywall" role="dialog" aria-modal="true">
       <div class="paywall-card">
         <div class="paywall-header">
-          <span class="paywall-title">VIP Lifetime Pass</span>
+          <span class="paywall-title">Subscription Required</span>
           <button class="paywall-close" id="paywall-close" aria-label="Close">&times;</button>
         </div>
-        <div class="paywall-banner">
-          <span class="banner-text">VIP Lifetime Pass</span>
-          <span class="banner-price">₹499/mo</span>
+        <div class="paywall-expr" id="paywall-expr">2 + 2</div>
+        <div class="paywall-reason" id="paywall-reason">
+          This calculation requires an active subscription.
         </div>
         <div class="paywall-timer" id="paywall-timer">00:30</div>
-        <button class="paywall-subscribe" id="paywall-subscribe">SUBSCRIBE TO UNLOCK ANSWER</button>
+        <div class="tier-list">
+          <div class="tier" data-tier="basic">
+            <div class="tier-header">
+              <div class="tier-name">Basic Mathematics Tier</div>
+              <div class="tier-price">$9.99<span>/mo</span></div>
+            </div>
+            <div class="tier-features">
+              <div class="tier-feature">Addition (+)</div>
+              <div class="tier-feature">Subtraction (−)</div>
+              <div class="tier-feature">Negation (±)</div>
+            </div>
+            <button class="tier-select" data-tier="basic">SELECT BASIC</button>
+          </div>
+          <div class="tier recommended" data-tier="advanced">
+            <div class="tier-badge">RECOMMENDED</div>
+            <div class="tier-header">
+              <div class="tier-name">Advanced STEM Pass</div>
+              <div class="tier-price">$24.99<span>/mo</span></div>
+            </div>
+            <div class="tier-features">
+              <div class="tier-feature">All Basic features</div>
+              <div class="tier-feature">Multiplication (×)</div>
+              <div class="tier-feature">Division (÷)</div>
+              <div class="tier-feature">Modulo (%)</div>
+              <div class="tier-feature">Decimal precision</div>
+            </div>
+            <button class="tier-select" data-tier="advanced">SELECT ADVANCED</button>
+          </div>
+        </div>
         <div class="paywall-footer">
           <span class="maybe-later" id="maybe-later">Maybe Later</span>
         </div>
@@ -60,7 +88,7 @@
         </div>
         <div class="payment-amount">
           <span class="amount-label">Total Amount</span>
-          <span class="amount-value">₹499.00/mo</span>
+          <span class="amount-value" id="gateway-amount">$9.99/mo</span>
         </div>
         <div class="payment-methods">
           <div class="payment-method active" data-method="upi">
@@ -78,15 +106,15 @@
         </div>
         <div id="upi-section" class="payment-section">
           <div class="upi-apps">
-            <button class="upi-app" data-app="gpay"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/512px-Google_Pay_Logo.svg.png" alt="Google Pay"></button>
-            <button class="upi-app" data-app="phonepe"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/PhonePe_Logo.svg/512px-PhonePe_Logo.svg.png" alt="PhonePe"></button>
-            <button class="upi-app" data-app="paytm"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Paytm_Logo_%28standalone%29.svg/512px-Paytm_Logo_%28standalone%29.svg.png" alt="Paytm"></button>
+            <button class="upi-app" data-app="gpay"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/512px-Google_Pay_Logo.svg.svg.png" alt="Google Pay" onerror="this.style.display='none'; this.parentNode.innerHTML='<span>GPay</span>'"></button>
+            <button class="upi-app" data-app="phonepe">PhonePe</button>
+            <button class="upi-app" data-app="paytm">Paytm</button>
           </div>
           <div class="upi-id-section">
             <span class="upi-label">Or pay with UPI ID</span>
             <div class="upi-input-wrapper">
               <input type="text" id="upi-id" placeholder="yourname@upi" class="upi-input">
-              <button class="upi-pay-btn" id="upi-pay">Pay ₹499</button>
+              <button class="upi-pay-btn" id="upi-pay">Pay Now</button>
             </div>
           </div>
         </div>
@@ -99,7 +127,7 @@
             </div>
             <input type="text" id="card-name" placeholder="Cardholder Name" class="card-input">
           </div>
-          <button class="card-pay-btn" id="card-pay">Pay ₹499</button>
+          <button class="card-pay-btn" id="card-pay">Pay Now</button>
         </div>
         <div id="wallets-section" class="payment-section" style="display:none;">
           <div class="wallet-list">
