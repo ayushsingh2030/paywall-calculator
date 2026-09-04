@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <span id="display-value">0</span>
+      <span id="overlay-value">0</span>
+    </div>
+    <div class="keys">
+      <button class="key clear">AC</button>
+      <button class="key operator">%</button>
+      <button class="key operator">±</button>
+      <button class="key operator">÷</button>
+      <button class="key">1</button>
+      <button class="key">2</button>
+      <button class="key">3</button>
+      <button class="key operator">×</button>
+      <button class="key">4</button>
+      <button class="key">5</button>
+      <button class="key">6</button>
+      <button class="key operator">−</button>
+      <button class="key">7</button>
+      <button class="key">8</button>
+      <button class="key">9</button>
+      <button class="key operator">+</button>
+      <button class="key">.</button>
+      <button class="key">0</button>
+      <button class="key wide">→</button>
+      <button class="key giant">=</button>
+    </div>
+    <div id="paywall" class="paywall" role="dialog" aria-modal="true">
+      <div class="paywall-header">
+        <span class="paywall-title">VIP Lifetime Pass</span>
+        <button class="paywall-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="paywall-banner">
+        <span class="banner-text">VIP Lifetime Pass</span>
+        <span class="banner-price">₹499/mo</span>
+      </div>
+      <div class="paywall-timer" id="paywall-timer">00:30</div>
+      <button class="paywall-subscribe" id="paywall-subscribe">SUBSCRIBE TO UNLOCK ANSWER</button>
+      <div class="paywall-footer">
+        <span class="maybe-later" id="maybe-later">Maybe Later</span>
+        <span class="paywall-spinner" id="paywall-spinner" style="display:none;"></span>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
