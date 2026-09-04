@@ -325,8 +325,10 @@ body {
 .paywall-footer {
   margin-top: 18px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 4px;
+  position: relative;
 }
 
 .maybe-later {
@@ -335,10 +337,54 @@ body {
   cursor: pointer;
   text-decoration: underline;
   font-weight: 500;
+  transition: color 0.15s ease;
+  display: inline-block;
+  user-select: none;
+  position: relative;
+  z-index: 10;
 }
 
 .maybe-later:hover {
   color: #0056b3;
+}
+
+.dodge-hint {
+  display: none;
+  font-size: 0.8rem;
+  color: #ff9500;
+  font-weight: 600;
+  font-style: italic;
+  margin-top: 8px;
+  animation: hintPulse 1s ease-in-out infinite;
+}
+
+.dodge-counter {
+  display: none;
+  font-size: 0.78rem;
+  color: #ff3b30;
+  font-weight: 700;
+  margin-top: 6px;
+  letter-spacing: 0.5px;
+  min-height: 1.2rem;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes wobble {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  15% { transform: translate(-15px, -8px) rotate(-6deg); }
+  30% { transform: translate(12px, 5px) rotate(4deg); }
+  45% { transform: translate(-8px, -12px) rotate(-3deg); }
+  60% { transform: translate(10px, 8px) rotate(5deg); }
+  75% { transform: translate(-5px, -4px) rotate(-2deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.maybe-later.wobbling {
+  animation: wobble 0.5s ease-out;
 }
 
 /* Payment Gateway Styles */

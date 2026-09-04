@@ -139,6 +139,26 @@ function sfxMaybeLater() {
   playTone(440, 0.1, 'sine', 0.12, 0.14);
 }
 
+function sfxDodge() {
+  unlockAudio();
+  playTone(1200, 0.05, 'sawtooth', 0.12);
+  playTone(1600, 0.05, 'sawtooth', 0.10, 0.06);
+}
+
+function sfxNearMiss() {
+  unlockAudio();
+  playTone(300, 0.15, 'square', 0.15);
+  playTone(250, 0.2, 'square', 0.12, 0.15);
+}
+
+function sfxFinallyGotYou() {
+  unlockAudio();
+  playTone(660, 0.08, 'sine', 0.2, 0);
+  playTone(880, 0.08, 'sine', 0.2, 0.09);
+  playTone(1100, 0.15, 'sine', 0.2, 0.18);
+  playTone(1320, 0.2, 'sine', 0.18, 0.28);
+}
+
 let currentValue = '0';
 let previousValue = null;
 let operator = null;
@@ -322,11 +342,15 @@ function showPaywall() {
   paywall.classList.add('show');
   sfxPaywallTrigger();
   startCountdown();
+  setTimeout(() => {
+    if (paywall.classList.contains('show')) startDodgeGame();
+  }, 100);
 }
 
 function hidePaywall() {
   if (!paywall.classList.contains('show')) return;
   paywall.classList.remove('show');
+  stopDodgeGame();
   sfxClose();
   stopCountdown();
 }
@@ -432,9 +456,194 @@ paywallClose.addEventListener('click', (e) => {
 
 maybeLater.addEventListener('click', (e) => {
   e.stopPropagation();
-  sfxMaybeLater();
+  if (maybeLaterDodging) return;
+  sfxFinallyGotYou();
   hidePaywall();
 });
+
+// "Maybe Later" dodge mini-game
+let maybeLaterDodging = false;
+let dodgeAttempts = 0;
+let dodgeRequired = 5;
+let lastDodgeTime = 0;
+let dodgeVelocity = { x: 0, y: 0 };
+let dodgePosition = { x: 0, y: 0 };
+let dodgeInitialized = false;
+
+document.addEventListener('mousemove', (e) => {
+  if (maybeLaterDodging) dodgeMaybeLater(e.clientX, e.clientY);
+});
+
+const dodgeHint = document.getElementById('dodge-hint');
+const dodgeCounter = document.getElementById('dodge-counter');
+
+function getRandomDodgePosition() {
+  const card = document.querySelector('.paywall-card');
+  const footer = document.querySelector('.paywall-footer');
+  if (!card || !footer) return { x: 0, y: 0 };
+
+  const cardRect = card.getBoundingClientRect();
+  const footerRect = footer.getBoundingClientRect();
+  const btnRect = maybeLater.getBoundingClientRect();
+
+  const padding = 16;
+  const minX = padding;
+  const maxX = cardRect.width - btnRect.width - padding;
+  const minY = cardRect.height - footerRect.height - btnRect.height - padding;
+  const maxY = cardRect.height - btnRect.height - padding * 2;
+
+  const x = minX + Math.random() * Math.max(1, (maxX - minX));
+  const y = minY + Math.random() * Math.max(1, (maxY - minY));
+
+  return { x, y };
+}
+
+function dodgeMaybeLater(clientX, clientY) {
+  if (!maybeLaterDodging) return;
+  if (!dodgeInitialized) {
+    const rect = maybeLater.getBoundingClientRect();
+    const card = document.querySelector('.paywall-card');
+    const cardRect = card.getBoundingClientRect();
+    dodgePosition.x = rect.left - cardRect.left;
+    dodgePosition.y = rect.top - cardRect.top;
+    dodgeInitialized = true;
+  }
+
+  const card = document.querySelector('.paywall-card');
+  const cardRect = card.getBoundingClientRect();
+  const btnRect = maybeLater.getBoundingClientRect();
+
+  const btnCenterX = cardRect.left + dodgePosition.x + btnRect.width / 2;
+  const btnCenterY = cardRect.top + dodgePosition.y + btnRect.height / 2;
+
+  const dx = clientX - btnCenterX;
+  const dy = clientY - btnCenterY;
+  const distance = Math.hypot(dx, dy);
+
+  const escapeMessages = [
+    'Nice try 😏', 'Nope!', 'Missed!', 'Too slow!', 'Not today!',
+    'Try harder 😜', 'Haha!', 'Nice effort!', 'Keep trying!', 'Nope nope nope!'
+  ];
+
+  if (distance < 120) {
+    sfxNearMiss();
+    const angle = Math.atan2(dy, dx);
+    const fleeSpeed = 180 + (Date.now() - lastDodgeTime < 500 ? 60 : 0);
+    dodgeVelocity.x = -Math.cos(angle) * fleeSpeed;
+    dodgeVelocity.y = -Math.sin(angle) * fleeSpeed;
+    lastDodgeTime = Date.now();
+    dodgeAttempts++;
+    sfxDodge();
+
+    maybeLater.classList.remove('wobbling');
+    void maybeLater.offsetWidth;
+    maybeLater.classList.add('wobbling');
+
+    if (dodgeCounter) {
+      const msg = escapeMessages[Math.floor(Math.random() * escapeMessages.length)];
+      const remaining = Math.max(0, dodgeRequired - dodgeAttempts);
+      dodgeCounter.textContent = `${msg} (${remaining > 0 ? remaining + ' left' : 'FINALLY FREE!'})`;
+      dodgeCounter.style.color = remaining === 0 ? '#34c759' : '#ff3b30';
+    }
+
+    if (dodgeAttempts >= dodgeRequired) {
+      dodgeAttempts = 0;
+      dodgeVelocity.x *= 1.2;
+      dodgeVelocity.y *= 1.2;
+    }
+  }
+}
+
+function updateDodgePosition(dt) {
+  if (!maybeLaterDodging) return;
+  const card = document.querySelector('.paywall-card');
+  const cardRect = card.getBoundingClientRect();
+  const btnRect = maybeLater.getBoundingClientRect();
+
+  dodgePosition.x += dodgeVelocity.x * dt;
+  dodgePosition.y += dodgeVelocity.y * dt;
+
+  const maxX = cardRect.width - btnRect.width - 8;
+  const maxY = cardRect.height - btnRect.height - 8;
+  if (dodgePosition.x < 8) {
+    dodgePosition.x = 8;
+    dodgeVelocity.x = Math.abs(dodgeVelocity.x) * 0.7;
+  } else if (dodgePosition.x > maxX) {
+    dodgePosition.x = maxX;
+    dodgeVelocity.x = -Math.abs(dodgeVelocity.x) * 0.7;
+  }
+  if (dodgePosition.y < 8) {
+    dodgePosition.y = 8;
+    dodgeVelocity.y = Math.abs(dodgeVelocity.y) * 0.7;
+  } else if (dodgePosition.y > maxY) {
+    dodgePosition.y = maxY;
+    dodgeVelocity.y = -Math.abs(dodgeVelocity.y) * 0.7;
+  }
+
+  dodgeVelocity.x *= 0.96;
+  dodgeVelocity.y *= 0.96;
+
+  maybeLater.style.position = 'absolute';
+  maybeLater.style.left = dodgePosition.x + 'px';
+  maybeLater.style.top = dodgePosition.y + 'px';
+}
+
+let lastDodgeFrame = 0;
+function dodgeAnimationLoop(timestamp) {
+  if (!lastDodgeFrame) lastDodgeFrame = timestamp;
+  const dt = Math.min(0.05, (timestamp - lastDodgeFrame) / 1000);
+  lastDodgeFrame = timestamp;
+  updateDodgePosition(dt);
+  requestAnimationFrame(dodgeAnimationLoop);
+}
+
+function startDodgeGame() {
+  maybeLaterDodging = true;
+  dodgeAttempts = 0;
+  dodgeInitialized = false;
+  dodgePosition = { x: 0, y: 0 };
+  dodgeVelocity = { x: 0, y: 0 };
+  lastDodgeFrame = 0;
+
+  maybeLater.style.position = '';
+  maybeLater.style.left = '';
+  maybeLater.style.top = '';
+  maybeLater.style.display = 'inline-block';
+
+  if (dodgeHint) {
+    dodgeHint.style.display = 'block';
+    setTimeout(() => {
+      if (dodgeHint) dodgeHint.style.display = 'none';
+    }, 4000);
+  }
+  if (dodgeCounter) {
+    dodgeCounter.style.display = 'block';
+    dodgeCounter.textContent = '';
+  }
+
+  setTimeout(() => {
+    if (!maybeLaterDodging) return;
+    const card = document.querySelector('.paywall-card');
+    const cardRect = card.getBoundingClientRect();
+    const btnRect = maybeLater.getBoundingClientRect();
+    const footerRect = document.querySelector('.paywall-footer').getBoundingClientRect();
+    dodgePosition.x = (cardRect.width - btnRect.width) / 2;
+    dodgePosition.y = cardRect.height - footerRect.height - btnRect.height - 8;
+    maybeLater.style.position = 'absolute';
+    maybeLater.style.left = dodgePosition.x + 'px';
+    maybeLater.style.top = dodgePosition.y + 'px';
+    requestAnimationFrame(dodgeAnimationLoop);
+  }, 50);
+}
+
+function stopDodgeGame() {
+  maybeLaterDodging = false;
+  maybeLater.style.position = '';
+  maybeLater.style.left = '';
+  maybeLater.style.top = '';
+  if (dodgeHint) dodgeHint.style.display = 'none';
+  if (dodgeCounter) dodgeCounter.style.display = 'none';
+}
 
 // Tier selection
 document.querySelectorAll('.tier-select').forEach(btn => {
